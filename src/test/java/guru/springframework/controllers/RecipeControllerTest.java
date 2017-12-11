@@ -5,6 +5,7 @@ import guru.springframework.services.RecipeService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.web.servlet.MockMvc;
@@ -47,7 +48,7 @@ public class RecipeControllerTest {
         recipes.add(new Recipe());
 
         when(recipeService.getRecipes()).thenReturn(recipes);
-        @SuppressWarnings("unchecked")
+
 		ArgumentCaptor<Set<Recipe>> argumentCaptor = ArgumentCaptor.forClass(Set.class);
 
         //When
@@ -87,5 +88,29 @@ public class RecipeControllerTest {
                 .andExpect(model().attributeExists())
                 .andExpect(model().attribute("recipes", hasSize(3)))
                 .andExpect(view().name("recipes"));
+    }
+
+    @Test
+    public void testViewRecipe() throws Exception {
+        //Given
+        Recipe recipe = new Recipe();
+        recipe.setId(1L);
+
+        when(recipeService.findById(anyLong())).thenReturn(recipe);
+
+        //Given resolver
+        InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
+        viewResolver.setPrefix("/templates/");
+        viewResolver.setSuffix(".jsp");
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new RecipeController(recipeService))
+                .setViewResolvers(viewResolver)
+                .build();
+
+        //then
+        mockMvc.perform(get("/recipe/show/1"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists())
+                .andExpect(view().name("recipe/show"));
     }
 }
